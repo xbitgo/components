@@ -21,8 +21,8 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/segmentio/kafka-go v0.4.32
 	github.com/uber/jaeger-client-go v2.30.0+incompatible
-	github.com/uber/jaeger-lib v2.4.1+incompatible // indirect
-	github.com/xbitgo/core v0.1.0
+	github.com/uber/jaeger-lib v2.4.1+incompatible
+	github.com/xbitgo/core v0.0.0-20220628084418-6d4137037c64
 	go.etcd.io/etcd/client/v3 v3.5.4
 	golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd // indirect
 	golang.org/x/time v0.0.0-20211116232009-f0f3c7e86c11
@@ -34,5 +34,3 @@ require (
 	gorm.io/driver/sqlserver v1.3.2
 	gorm.io/gorm v1.23.6
 )
-
-replace github.com/xbitgo/core => ../xbit-core
