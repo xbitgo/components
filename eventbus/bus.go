@@ -1,6 +1,7 @@
 package eventbus
 
 import (
+	"github.com/panjf2000/ants/v2"
 	"github.com/pkg/errors"
 	"github.com/xbitgo/core/log"
 )
@@ -13,7 +14,8 @@ const (
 )
 
 type Bus struct {
-	procNum      int
+	maxProc      int
+	procPool     *ants.PoolWithFunc
 	events       chan *event
 	addEvents    map[string]func(info Entity, args ...string) error
 	modifyEvents map[string]func(new Entity, old Entity, args ...string) error
@@ -22,41 +24,67 @@ type Bus struct {
 }
 
 func (b *Bus) run() {
-	for i := 0; i < b.procNum; i++ {
-		go func() {
-			for e := range b.events {
-				err := b.do(e)
-				if err != nil {
-					log.Errorf("event[%+v] do err:%v", *e, err)
-				}
-			}
-		}()
+	pool, err := ants.NewPoolWithFunc(b.maxProc, func(i interface{}) {
+		e := i.(*event)
+		err := b.do(i.(*event))
+		if err != nil {
+			log.Errorf("eventbus event[%+v] do err:%v", *e, err)
+		}
+	})
+	if err != nil {
+		log.Panicf("eventbus start ProcPool err:%v", err)
+		panic(err)
 	}
+	b.procPool = pool
+
+	go func() {
+		for {
+			select {
+			case a := <-b.events:
+				go func(e *event) {
+					err := b.procPool.Invoke(e)
+					if err != nil {
+						log.Errorf("eventbus procPool.Invoke err: %v", err)
+					}
+				}(a)
+			}
+		}
+	}()
 }
 
 func (b *Bus) do(e *event) error {
-	if e.Entity == nil {
-		return nil
-	}
 	switch e.Action {
 	case add:
+		if e.Entity == nil {
+			return nil
+		}
 		if fun, ok := b.addEvents[e.Entity.EntityName()]; ok {
 			return fun(e.Entity, e.Args...)
 		}
 	case modify:
+		if e.Entity == nil {
+			return nil
+		}
 		if fun, ok := b.modifyEvents[e.Entity.EntityName()]; ok {
 			return fun(e.Entity, e.OEntity, e.Args...)
 		}
 	case del:
+		if e.Entity == nil {
+			return nil
+		}
 		if fun, ok := b.deleteEvents[e.Entity.EntityName()]; ok {
 			return fun(e.Entity, e.Args...)
+		}
+	case custom:
+		if fun, ok := b.customEvents[e.FuncName]; ok {
+			return fun(e.Args...)
 		}
 	}
 	return errors.New("not found event subscriber")
 }
 
 func (b *Bus) Close() {
-	//todo
+	b.procPool.Release()
 }
 
 // EntityAdd 触发实体新增事件

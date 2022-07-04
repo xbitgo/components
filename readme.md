@@ -1,0 +1,15 @@
+## XbitGo 组件库
+
+* [异步任务组件] (asyncbus)
+* [配置中心适配组件] (cfg_adapter)
+* [分布式定时任务组件] (crontab)
+* [数据库组件] (database)
+* [消息队列延迟器] (delaybus)
+* [分布式事务管理器] (dtx)
+* [事件分发总线] (eventbus)
+* [筛选查询器] (filterx)
+* [限流器] (limit)
+* [消息队列] (MQ)
+* [prometheus监控] (prometheus)
+* [分布式ID生成器] (sequence)
+* [链路追踪] (tracing)

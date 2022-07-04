@@ -36,8 +36,8 @@ type Database struct {
 	Sqlx *sqlx.DB
 }
 
-func (d *Database) NewSession(ctx context.Context, db *gorm.DB) *gorm.DB {
-	return db.Session(&gorm.Session{NewDB: true, Context: ctx})
+func (d *Database) NewSession(ctx context.Context) *gorm.DB {
+	return d.Gorm.Session(&gorm.Session{NewDB: true, Context: ctx})
 }
 
 func FromGormDB(gormDB *gorm.DB, driverName string) (*Database, error) {

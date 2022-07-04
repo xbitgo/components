@@ -1,4 +1,4 @@
-package traceing
+package tracing
 
 import (
 	"github.com/gin-gonic/gin"

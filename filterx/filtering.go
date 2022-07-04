@@ -29,6 +29,13 @@ type Filtering struct {
 	Children FilteringList `json:"children,omitempty"`
 }
 
+type Page struct {
+	NoCount  bool   `json:"no_count"`
+	Page     int32  `json:"page"`
+	PageSize int32  `json:"page_size"`
+	OrderBy  string `json:"order_by"`
+}
+
 func (f *Filtering) sliceValue() ([]interface{}, bool) {
 	var (
 		list []interface{}

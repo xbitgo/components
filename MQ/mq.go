@@ -10,7 +10,7 @@ type Consumer interface {
 	Consume(ctx context.Context, f func(message []byte) error) error
 }
 
-type MQ interface {
+type Queue interface {
 	Producer
 	Consumer
 }

@@ -1,16 +1,20 @@
 package eventbus
 
+import (
+	"github.com/xbitgo/core/di"
+)
+
 var iBus *Bus
 
 type Options struct {
-	ProcNum int
+	MaxProc int
 }
 
 var defaultOptions = Options{
-	ProcNum: 16,
+	MaxProc: 1000,
 }
 
-// Init procNum:异步处理协程数量
+// Init maxProc:异步处理最大协程数量
 func Init(opts ...Options) {
 	opt := defaultOptions
 	if len(opts) > 0 {
@@ -22,7 +26,7 @@ func Init(opts ...Options) {
 		modifyEvents: map[string]func(new Entity, old Entity, args ...string) error{},
 		deleteEvents: map[string]func(info Entity, args ...string) error{},
 		customEvents: map[string]func(args ...string) error{},
-		procNum:      opt.ProcNum,
+		maxProc:      opt.MaxProc,
 	}
 	iBus.run()
 }
@@ -32,12 +36,14 @@ func Close() {
 }
 
 func RegisterSubscriber(entityName string, subscriber Subscriber) {
+	di.MustBind(subscriber)
 	iBus.addEvents[entityName] = subscriber.Add
 	iBus.modifyEvents[entityName] = subscriber.Modify
 	iBus.deleteEvents[entityName] = subscriber.Delete
 }
 
 func RegisterCustomEvent(subscriber CustomSubscriber) {
+	di.MustBind(subscriber)
 	for s, f := range subscriber.RegisterFunc() {
 		iBus.customEvents[s] = f
 	}

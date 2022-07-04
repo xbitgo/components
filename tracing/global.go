@@ -1,4 +1,4 @@
-package traceing
+package tracing
 
 import (
 	"context"
@@ -13,7 +13,6 @@ type Tracer struct {
 }
 
 var globalTracer *Tracer
-
 
 // Close .
 func Close() error {

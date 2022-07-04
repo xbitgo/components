@@ -7,6 +7,26 @@ import (
 	"gorm.io/gorm"
 )
 
+func PageGormOption(session *gorm.DB, pg *Page) (*gorm.DB, bool) {
+	if pg == nil {
+		return session, true
+	}
+	noCount := pg.NoCount
+	// 默认 1 100
+	if pg.Page == 0 {
+		pg.Page = 1
+	}
+	if pg.PageSize == 0 {
+		pg.PageSize = 100
+	}
+	offset := (pg.Page - 1) * pg.PageSize
+	session = session.Offset(int(offset)).Limit(int(pg.PageSize))
+	if pg.OrderBy != "" {
+		session = session.Order(pg.OrderBy)
+	}
+	return session, noCount
+}
+
 func (f *Filtering) GormOption(db *gorm.DB) (*gorm.DB, error) {
 	field := f.Field
 	if f.Value == nil && f.Operator != OR {
@@ -65,7 +85,6 @@ func (f *Filtering) GormOption(db *gorm.DB) (*gorm.DB, error) {
 		return db.Where(f.Field, f.Value), nil
 	case OR:
 		orSQL, args, err := f.toSqlStr()
-		fmt.Println(err)
 		if err != nil {
 			return db, err
 		}

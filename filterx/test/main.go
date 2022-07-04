@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/xbitgo/core/tools/tool_json"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
@@ -64,6 +65,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	esq, err := querys.ElasticOption()
+	s, _ := esq.Source()
+	fmt.Println(tool_json.JSON.MarshalToString(s))
+
 	list := make([]Book, 0)
 	rs := session.Find(&list)
 	fmt.Println(rs.Error)
