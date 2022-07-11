@@ -2,30 +2,51 @@ package dtx
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"github.com/xbitgo/core/tools/tool_str"
+	"google.golang.org/grpc/metadata"
 	"time"
+)
+
+const (
+	keyTxId   = "_dtx_tx_id"
+	inSrvTxId = "_dtx_in_srv_tx_id"
 )
 
 type TxContext struct {
 	_ctx       context.Context
 	txId       string
-	parentTxID string
-	timeoutAt  time.Time
+	inSrvTxId  string
+	withParent bool
 }
 
-func NewTxContext(ctx context.Context) (*TxContext, error) {
-	_txID, parentTxID := mg.onTx(ctx)
-	if parentTxID != "" {
-		return nil, errors.New("不支持 两层以上分布式事务")
+func NewTxContext(ctx context.Context) *TxContext {
+	withParent := true
+	txId := onTx(ctx)
+	if txId == "" {
+		txId = tool_str.UUID()
+		withParent = false
+		ctx = metadata.NewOutgoingContext(ctx, metadata.New(map[string]string{
+			keyTxId: txId,
+		}))
 	}
 	tx := &TxContext{
 		_ctx:       ctx,
-		txId:       tool_str.UUID(),
-		parentTxID: _txID,
-		timeoutAt:  time.Now().Add(1 * time.Minute),
+		txId:       txId,
+		withParent: withParent,
 	}
-	return tx, nil
+	return tx
+}
+
+func NewInSrvTxContext(ctx context.Context) *TxContext {
+	txId := onInSrvTx(ctx)
+	if txId == "" {
+		txId = tool_str.UUID()
+	}
+	tx := &TxContext{
+		_ctx:      ctx,
+		inSrvTxId: txId,
+	}
+	return tx
 }
 
 func (t *TxContext) Deadline() (deadline time.Time, ok bool) {
@@ -46,4 +67,40 @@ func (t *TxContext) Value(key interface{}) interface{} {
 
 func (t *TxContext) ParentContext() context.Context {
 	return t._ctx
+}
+
+func onTx(ctx context.Context) (txId string) {
+	switch _c := ctx.(type) {
+	case *TxContext:
+		return _c.txId
+	default:
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return ""
+		}
+		if v, ok := md[keyTxId]; ok {
+			if len(v) > 0 {
+				txId = v[0]
+			}
+		}
+	}
+	return txId
+}
+
+func onInSrvTx(ctx context.Context) (txId string) {
+	switch _c := ctx.(type) {
+	case *TxContext:
+		return _c.inSrvTxId
+	default:
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return ""
+		}
+		if v, ok := md[inSrvTxId]; ok {
+			if len(v) > 0 {
+				txId = v[0]
+			}
+		}
+	}
+	return txId
 }

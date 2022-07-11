@@ -1,25 +1,34 @@
 package dtx
 
-import "context"
+import (
+	"context"
+	"google.golang.org/grpc/metadata"
+)
 
-type SerialFunc struct {
-	Impl string
-	Func string
-	Args []interface{}
+func RegisterInSrv(ctx context.Context, rollback func() error, commit func() error) {
+	mg.registerInSrv(ctx, rollback, commit)
 }
 
-func Register(ctx context.Context, rollback func() error, commit func() error) {
-	mg.register(ctx, rollback, commit)
+func RegisterRollback(ctx context.Context, fun string, paramsRaw []byte) error {
+	md, _ := metadata.FromIncomingContext(ctx)
+	rollback := SerialFunc{
+		MD:   md,
+		Func: fun,
+		Raw:  paramsRaw,
+	}
+	return mg.register(ctx, rollback, ActRollback)
 }
 
-func RegisterSerialFunc(ctx context.Context, rollback SerialFunc, commit SerialFunc) {
-	mg.registerSerialFunc(ctx, rollback, commit)
+func RegisterCommit(ctx context.Context, fun string, paramsRaw []byte) error {
+	md, _ := metadata.FromIncomingContext(ctx)
+	commit := SerialFunc{
+		MD:   md,
+		Func: fun,
+		Raw:  paramsRaw,
+	}
+	return mg.register(ctx, commit, ActCommit)
 }
 
-func InSrvTx(ctx context.Context, f func(ctx context.Context) error) error {
-	return mg.InSrvTx(ctx, f)
-}
-
-func MultiSrvTx(ctx context.Context, f func(ctx context.Context) error) error {
-	return mg.MultiSrvTx(ctx, f)
+func Tx(ctx context.Context, f func(ctx context.Context) error) error {
+	return mg.Tx(ctx, f)
 }
