@@ -37,7 +37,13 @@ type Database struct {
 }
 
 func (d *Database) NewSession(ctx context.Context) *gorm.DB {
-	return d.Gorm.Session(&gorm.Session{NewDB: true, Context: ctx})
+	db := d.Gorm.Session(&gorm.Session{NewDB: true, Context: ctx})
+	if dbMap := saasDBMap(ctx); dbMap != nil {
+		for k, v := range dbMap {
+			db = db.Where(k, v)
+		}
+	}
+	return db
 }
 
 func FromGormDB(gormDB *gorm.DB, driverName string) (*Database, error) {
